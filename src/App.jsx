@@ -1,121 +1,105 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// ============================================================
+// App.jsx — Route definitions + navigation guard
+// ============================================================
 
-function App() {
-  const [count, setCount] = useState(0)
+import { Routes, Route, Navigate, useNavigate, useLocation, NavLink } from 'react-router-dom';
+import { useGame } from './context/GameContext.jsx';
+import { useSaveLoad } from './hooks/useSaveLoad.js';
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+// Screens
+import TeamSelectScreen  from './screens/TeamSelectScreen.jsx';
+import MainHub          from './screens/MainHub.jsx';
+import CalendarScreen   from './screens/CalendarScreen.jsx';
+import PracticeScreen   from './screens/PracticeScreen.jsx';
+import QualifyingScreen from './screens/QualifyingScreen.jsx';
+import StrategyScreen   from './screens/StrategyScreen.jsx';
+import RaceScreen       from './screens/RaceScreen.jsx';
+import ResultsScreen    from './screens/ResultsScreen.jsx';
+import RDScreen         from './screens/RDScreen.jsx';
+import DriverMarket     from './screens/DriverMarket.jsx';
+import StandingsScreen  from './screens/StandingsScreen.jsx';
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+// ── Navigation guard: redirect to /new-game if no game state ──
+function RequireGame({ children }) {
+  const { state } = useGame();
+  if (!state) return <Navigate to="/new-game" replace />;
+  return children;
 }
 
-export default App
+// ── Navbar ──
+function Navbar() {
+  const { state } = useGame();
+  const { saveNow } = useSaveLoad();
+
+  if (!state) return null;
+
+  const teamId  = state.playerTeamId ?? '';
+  const teamVar = `var(--team-${teamId.replace('_', '-')})`;
+  const raceNum = state.currentRaceIndex + 1;
+
+  function handleSave() {
+    saveNow(0);
+  }
+
+  return (
+    <nav className="navbar">
+      <div className="navbar-brand">
+        F1 <span>Manager</span> 2026
+      </div>
+
+      <div className="navbar-nav">
+        <NavLink className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} to="/hub">Hub</NavLink>
+        <NavLink className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} to="/calendar">Calendar</NavLink>
+        <NavLink className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} to="/standings">Standings</NavLink>
+        <NavLink className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} to="/rd">R&amp;D</NavLink>
+        <NavLink className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} to="/drivers">Drivers</NavLink>
+      </div>
+
+      <div className="navbar-right">
+        <span className="text-sm text-muted">Race {raceNum}/24</span>
+        <span
+          className="team-dot"
+          style={{ background: teamVar, width: 12, height: 12 }}
+          title={teamId}
+        />
+        <button className="btn btn-ghost btn-sm" onClick={handleSave} title="Save game">
+          💾
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ── App ──
+export default function App() {
+  return (
+    <div className="app-layout">
+      <Navbar />
+
+      <Routes>
+        {/* New game / team select */}
+        <Route path="/new-game" element={<TeamSelectScreen />} />
+
+        {/* All game screens require state */}
+        <Route path="/hub"        element={<RequireGame><MainHub /></RequireGame>} />
+        <Route path="/calendar"   element={<RequireGame><CalendarScreen /></RequireGame>} />
+        <Route path="/practice"   element={<RequireGame><PracticeScreen /></RequireGame>} />
+        <Route path="/qualifying" element={<RequireGame><QualifyingScreen /></RequireGame>} />
+        <Route path="/strategy"   element={<RequireGame><StrategyScreen /></RequireGame>} />
+        <Route path="/race"       element={<RequireGame><RaceScreen /></RequireGame>} />
+        <Route path="/results"    element={<RequireGame><ResultsScreen /></RequireGame>} />
+        <Route path="/rd"         element={<RequireGame><RDScreen /></RequireGame>} />
+        <Route path="/drivers"    element={<RequireGame><DriverMarket /></RequireGame>} />
+        <Route path="/standings"  element={<RequireGame><StandingsScreen /></RequireGame>} />
+
+        {/* Default redirect */}
+        <Route path="*" element={<DefaultRedirect />} />
+      </Routes>
+    </div>
+  );
+}
+
+function DefaultRedirect() {
+  const { state } = useGame();
+  return <Navigate to={state ? '/hub' : '/new-game'} replace />;
+}
